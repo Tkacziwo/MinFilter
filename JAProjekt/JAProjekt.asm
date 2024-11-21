@@ -43,7 +43,6 @@ xor r15, r15				;zero r15
 mov r13w, bitmap_width		;r13w is bitmap_width
 mov r14w, y_pos				;r14w is y_pos
 mov r15w, x_pos				;r15w is x_pos
-;call FindMinRGB
 
 call FindMinRGBVector
 
@@ -53,24 +52,19 @@ mov min_G, ah ;min_G from cl
 shr eax, 16
 mov min_B, al ;min_B from dl
 
-;mov min_R, bl
-;mov min_G, cl
-;mov min_B, al
 
 ;ChangeCentralPixel:
-xor ebx, ebx
-xor esi, esi
-mov bx, y_pos ;load y_pos
-mov si, x_pos ;load x_pos
-xor r13,r13
-xor r12,r12
-mov r13b, 3
-mov r12w, bitmap_width ;move bitmap width to r12
-imul ebx, r13d ;multiply bx(y_pos) by 3 bytes per pixel
-imul esi, r13d ;multiply si(x_pos) by 3 bytes per pixel
-imul ebx, r12d ;multiply bx(y_pos) by bitmap width
-add ebx, esi ; add si(x_pos), position of Red of pixel is now in bx
-mov rdx, rbx ;store it in rdx register
+mov r14w, y_pos				;r14w is y_pos
+mov r15w, x_pos				;r15w is x_pos		
+mov r13w, bitmap_width		;r13w is bitmap_width
+xor rdx, rdx				;reset rdx register
+add rdx, r14
+add rdx, r14
+add rdx, r14				;add 3 times == 3*r14w == multiplying y coordinate by 3 bytes per pixel
+imul rdx, r13				;multiply y coordinate by bitmap_width
+add rdx, r15		
+add rdx, r15		
+add rdx, r15				;add 3 times == multiplying x coordinate by 3 bytes per pixel
 
 mov al, min_R ;load minimum Red
 mov [r9 + rdx], al ;change Red
@@ -184,9 +178,6 @@ FindMinRGB endp
 
 
 FindMinRGBVector proc
-;pxor xmm0,xmm0			;fill xmm0 with 0
-;pcmpeqb xmm0, xmm0		;fill xmm0 with 255
-
 ;	register explanation
 ;---------------------------------------------------;
 	;bitmap_width is in r13w
@@ -265,7 +256,6 @@ xor r14, r14
 movd eax, xmm0
 ret
 FindMinRGBVector endp
-
 
 MinimalFilterNoVector proc
 ;creating local variables
