@@ -1,5 +1,3 @@
 LIBRARY JAProjekt
 
 EXPORTS MinimalFilter
-
-EXPORTS MinimalFilterNoVector

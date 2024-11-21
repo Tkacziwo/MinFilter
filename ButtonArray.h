@@ -16,12 +16,14 @@ private:
 public:
 	ButtonArray()
 	{
+		threadsNumber = 1;
 		characterSize = 30;
 		font.loadFromFile("Arial.ttf");
 	}
 
 	ButtonArray(sf::Vector2f offset, std::vector<sf::Texture>& textures)
 	{
+		threadsNumber = 1;
 		this->textures = textures;
 		arrayOffset = offset;
 		characterSize = 40;

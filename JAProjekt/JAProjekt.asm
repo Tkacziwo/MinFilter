@@ -312,27 +312,6 @@ pminub xmm0, xmm7
 pminub xmm0, xmm8
 pminub xmm0, xmm9
 
-;push cx
-;xor cx, cx
-;ColumnLoop:				;inner loop for columns
-;xor eax, eax
-;xor rbx, rbx
-;mov al, [r10 + rdx + 2] ;load blue
-;shl eax, 8
-;mov al, [r10 + rdx + 1] ;load green
-;shl eax, 8
-;mov al, [r10 + rdx]		;load red
-;movd xmm1, eax
-;pminub xmm0, xmm1
-;add rdx, 3
-;inc cx
-;cmp cx, 3				;inner loop condition check
-;jl ColumnLoop
-;dec r14					;decrease y_pos by 1
-;pop cx					;pop outer loop iteration number
-;inc cx					;increase it by 1
-;cmp cx, 3				;outer loop condition check
-;jl RowLoop
 ;;move min RGB values to registers
 xor r14, r14
 movd eax, xmm0
