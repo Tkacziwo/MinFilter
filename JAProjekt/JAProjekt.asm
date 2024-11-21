@@ -184,8 +184,8 @@ FindMinRGB endp
 
 
 FindMinRGBVector proc
-pxor xmm0,xmm0			;fill xmm0 with 0
-pcmpeqb xmm0, xmm0		;fill xmm0 with 255
+;pxor xmm0,xmm0			;fill xmm0 with 0
+;pcmpeqb xmm0, xmm0		;fill xmm0 with 255
 
 ;	register explanation
 ;---------------------------------------------------;
@@ -200,8 +200,6 @@ inc r14w		;increment y_pos
 dec r15w		;decrement x_pos
 ;---------------------------------------------------;
 
-xor rcx, rcx
-RowLoop:			;outer loop for rows
 
 ;	calculate position in array
 ;---------------------------------------------------;
@@ -214,93 +212,44 @@ add rdx, r15
 add rdx, r15		
 add rdx, r15		;add 3 times == multiplying x coordinate by 3 bytes per pixel
 ;---------------------------------------------------;
-mov r10, r8				;move source bitmap pointer to r10
-xor eax, eax
-; top row			;Load 3 pixels immediately to xmm1 register (top row)
-mov al, [r10 + rdx + 2] ;blue
-shl eax, 8
-mov al, [r10 + rdx + 1] ;green
-shl eax, 8
-mov al, [r10 + rdx]		;red
-movd xmm1, eax			;move to xmm1
-xor eax, eax
-mov al, [r10 + rdx + 5]
-shl eax, 8
-mov al, [r10 + rdx + 4]
-shl eax, 8
-mov al, [r10 + rdx + 3]
-movd xmm2, eax
-xor eax, eax
-mov al, [r10 + rdx + 8]
-shl eax, 8
-mov al, [r10 + rdx + 7]
-shl eax, 8
-mov al, [r10 + rdx + 6]
-movd xmm3, eax
 
-;		mid row			;
-xor rdx, rdx		;reset rdx register
+;				Calculate subtraction				;
+;---------------------------------------------------;
+xor rcx, rcx
 dec r14
-add rdx, r14
-add rdx, r14
-add rdx, r14		;add 3 times == 3*r14w == multiplying y coordinate by 3 bytes per pixel
-imul rdx, r13		;multiply y coordinate by bitmap_width
-add rdx, r15		
-add rdx, r15		
-add rdx, r15		;add 3 times == multiplying x coordinate by 3 bytes per pixel
-xor eax, eax
-mov al, [r10 + rdx + 2] ;blue
-shl eax, 8
-mov al, [r10 + rdx + 1] ;green
-shl eax, 8
-mov al, [r10 + rdx]		;red
-movd xmm4, eax			;move to xmm1
-xor eax, eax
-mov al, [r10 + rdx + 5]
-shl eax, 8
-mov al, [r10 + rdx + 4]
-shl eax, 8
-mov al, [r10 + rdx + 3]
-movd xmm5, eax
-xor eax, eax
-mov al, [r10 + rdx + 8]
-shl eax, 8
-mov al, [r10 + rdx + 7]
-shl eax, 8
-mov al, [r10 + rdx + 6]
-movd xmm6, eax
+add rcx, r14
+add rcx, r14
+add rcx, r14
+imul rcx, r13
+add rcx, r15
+add rcx, r15
+add rcx, r15
+mov r10, rdx
+sub r10, rcx
+;---------------------------------------------------;
 
-;		bottom row		;
-xor rdx, rdx		;reset rdx register
-dec r14
-add rdx, r14
-add rdx, r14
-add rdx, r14		;add 3 times == 3*r14w == multiplying y coordinate by 3 bytes per pixel
-imul rdx, r13		;multiply y coordinate by bitmap_width
-add rdx, r15		
-add rdx, r15		
-add rdx, r15		;add 3 times == multiplying x coordinate by 3 bytes per pixel
-xor eax, eax
-mov al, [r10 + rdx + 2] ;blue
-shl eax, 8
-mov al, [r10 + rdx + 1] ;green
-shl eax, 8
-mov al, [r10 + rdx]		;red
-movd xmm7, eax			;move to xmm1
-xor eax, eax
-mov al, [r10 + rdx + 5]
-shl eax, 8
-mov al, [r10 + rdx + 4]
-shl eax, 8
-mov al, [r10 + rdx + 3]
-movd xmm8, eax
-xor eax, eax
-mov al, [r10 + rdx + 8]
-shl eax, 8
-mov al, [r10 + rdx + 7]
-shl eax, 8
-mov al, [r10 + rdx + 6]
-movd xmm9, eax
+;					top row							;
+;---------------------------------------------------;
+movdqu xmm0, [r8 + rdx]
+movdqu xmm1, [r8 + rdx + 3]
+movdqu xmm2, [r8 + rdx + 6]
+;---------------------------------------------------;
+
+;					mid row							;
+;---------------------------------------------------;
+sub rdx, r10
+movdqu xmm3, [r8 + rdx]
+movdqu xmm4, [r8 + rdx + 3]
+movdqu xmm5, [r8 + rdx + 6]
+;---------------------------------------------------;
+
+;					bottom row						;
+;---------------------------------------------------;
+sub rdx, r10
+movdqu xmm6, [r8 + rdx]
+movdqu xmm7, [r8 + rdx + 3]
+movdqu xmm8, [r8 + rdx + 6]
+;---------------------------------------------------;
 
 pminub xmm0, xmm1
 pminub xmm0, xmm2
@@ -310,7 +259,6 @@ pminub xmm0, xmm5
 pminub xmm0, xmm6
 pminub xmm0, xmm7
 pminub xmm0, xmm8
-pminub xmm0, xmm9
 
 ;;move min RGB values to registers
 xor r14, r14
