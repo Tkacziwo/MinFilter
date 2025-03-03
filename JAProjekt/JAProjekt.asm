@@ -1,5 +1,5 @@
 .code
-FindMinRGBMacro macro
+FindMinRGB proc
 ;	register explanation
 ;---------------------------------------------------;
 	;bitmap_width is in r13w
@@ -27,6 +27,7 @@ add rdx, r15		;add 3 times == multiplying x coordinate by 3 bytes per pixel
 
 ;				Calculate subtraction				;
 ;---------------------------------------------------;
+push cx
 xor rcx, rcx
 dec r14
 add rcx, r14
@@ -40,58 +41,42 @@ mov r10, rdx
 sub r10, rcx
 ;---------------------------------------------------;
 
-;					top row							;
+;			load and find min of pixel				;
 ;---------------------------------------------------;
-movdqu xmm0, [r8 + rdx]
-movdqu xmm1, [r8 + rdx + 3]
-movdqu xmm2, [r8 + rdx + 6]
-;---------------------------------------------------;
-
-;					mid row							;
-;---------------------------------------------------;
+movdqu xmm0, [r8+rdx]		;loads 16 bytes into xmm0 (top row)
 sub rdx, r10
-movdqu xmm3, [r8 + rdx]
-movdqu xmm4, [r8 + rdx + 3]
-movdqu xmm5, [r8 + rdx + 6]
-;---------------------------------------------------;
-
-;					bottom row						;
-;---------------------------------------------------;
+movdqu xmm1, [r8+rdx]		;loads 16 bytes into xmm1 (mid row)
 sub rdx, r10
-movdqu xmm6, [r8 + rdx]
-movdqu xmm7, [r8 + rdx + 3]
-movdqu xmm8, [r8 + rdx + 6]
-;---------------------------------------------------;
-
-;			take minimum of all pixels				;
-;---------------------------------------------------;
-pminub xmm0, xmm1
-pminub xmm0, xmm2
-pminub xmm0, xmm3
-pminub xmm0, xmm4
-pminub xmm0, xmm5
-pminub xmm0, xmm6
-pminub xmm0, xmm7
-pminub xmm0, xmm8
+movdqu xmm2, [r8+rdx]		;loads 16 bytes into xmm2 (bot row)
+pminub xmm0, xmm1			;minimum of top and min row
+pminub xmm0, xmm2			;minimum of top and bot row
+movdqu xmm1, xmm0			;mov xmm0 to xmm1
+movdqu xmm2, xmm0			;mov xmm0 to xmm2
+psrldq xmm1, 3				;shift xmm1 to align with pixel 0 in xmm0
+psrldq xmm2, 6				;shift xmm2 to align with pixel 0 in xmm0
+pminub xmm0, xmm1			;minimum of top pixel and mid pixel
+pminub xmm0, xmm2			;minimum of mid pixel and bot pixel
 ;---------------------------------------------------;
 
 ;			move result to esi register				;
 ;---------------------------------------------------;
 xor r14, r14
+pop cx
 movd esi, xmm0
-endm
+ret
+FindMinRGB endp
 
 MinimalFilter proc
 ;creating local variables
-LOCAL original_x_pos:WORD, decremented_bitmap_width:WORD ;original x position
+LOCAL original_x_pos:WORD, operations_count:WORD, remainder:WORD ;original x position
 LOCAL y_pos:WORD, x_pos:WORD ;central y and x position
 LOCAL bitmap_width:WORD ;bmp width
 
-;	pushing on stack registers
+;			pushing on stack registers				;
 ;---------------------------------------------------;
-push rbp        ; Preserve old base pointer
-push rsi        ; Preserve register ESI
-push rdi        ; Preserve register EDI
+push rbp        ;Preserve old base pointer
+push rsi        ;Preserve register ESI
+push rdi        ;Preserve register EDI
 push r10		;Preserve r10
 push r11		;Preserve r11
 push r12		;Preserve r12
@@ -109,7 +94,12 @@ mov y_pos, cx
 mov x_pos, 1
 mov bitmap_width, dx
 sub dx,2
-mov decremented_bitmap_width, dx
+mov ax, dx
+mov cx, 3
+xor dx, dx
+div cx
+mov operations_count, ax
+mov remainder, dx
 ;---------------------------------------------------;
 
 xor rcx, rcx
@@ -123,8 +113,7 @@ mov r13w, bitmap_width		;r13w is bitmap_width
 mov r14w, y_pos				;r14w is y_pos
 mov r15w, x_pos				;r15w is x_pos
 
-FindMinRGBMacro
-
+call FindMinRGB
 ;			calculate position in array				;
 ;---------------------------------------------------;
 mov r14w, y_pos				;r14w is y_pos
@@ -145,16 +134,66 @@ shr esi, 8
 mov [r9 + rdx + 1], sil		;change Green
 shr esi, 8
 mov [r9 + rdx + 2], sil		;change Blue
+psrldq xmm0, 3
+xor esi, esi
+movd esi, xmm0
+mov [r9 + rdx + 3], sil		;change Red
+shr esi, 8
+mov [r9 + rdx + 4], sil		;change Green
+shr esi, 8
+mov [r9 + rdx + 5], sil		;change Blue
+psrldq xmm0, 3
+xor esi, esi
+movd esi, xmm0
+mov [r9 + rdx + 6], sil		;change Red
+shr esi, 8
+mov [r9 + rdx + 7], sil		;change Green
+shr esi, 8
+mov [r9 + rdx + 8], sil		;change Blue
 
 mov ax, x_pos
-inc ax
+add ax, 3
 mov x_pos, ax
 pop cx
 inc cx
-cmp cx, decremented_bitmap_width
+cmp cx, operations_count
 jl MainLoop
-mov ax, original_x_pos
+
+mov cx, remainder		;mov remainder to cx
+mov ax, x_pos
+dec ax
 mov x_pos, ax
+RemainderPositiveLoop:
+mov ax, x_pos
+inc ax
+mov x_pos, ax
+xor r13, r13				;zero r13
+xor r14, r14				;zero r14
+xor r15, r15				;zero r15
+mov r13w, bitmap_width		;r13w is bitmap_width
+mov r14w, y_pos				;r14w is y_pos
+mov r15w, x_pos				;r15w is x_pos
+call FindMinRGB
+mov r14w, y_pos				;r14w is y_pos
+mov r15w, x_pos				;r15w is x_pos		
+mov r13w, bitmap_width		;r13w is bitmap_width
+xor rdx, rdx				;reset rdx register
+add rdx, r14
+add rdx, r14
+add rdx, r14				;add 3 times == 3*r14w == multiplying y coordinate by 3 bytes per pixel
+imul rdx, r13				;multiply y coordinate by bitmap_width
+add rdx, r15		
+add rdx, r15		
+add rdx, r15				;add 3 times == multiplying x coordinate by 3 bytes per pixel;
+
+mov [r9 + rdx], sil			;change Red
+shr esi, 8
+mov [r9 + rdx + 1], sil		;change Green
+shr esi, 8
+mov [r9 + rdx + 2], sil		;change Blue
+dec cx
+cmp cx, 0
+jg RemainderPositiveLoop
 
 ;restoring registers
 ;---------------------------------------------------;
