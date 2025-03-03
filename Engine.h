@@ -108,6 +108,13 @@ private:
 							{
 								std::cout << "Starting filter...\n";
 								programStatus.HandleProgramStatusChange(30);
+								if (fImg != nullptr)
+								{
+									fImg->ImageNotRead();
+									delete fImg;
+									fImg = nullptr;
+									Render();
+								}
 								Filter(bmpFileName, checkboxChosenAction, threadsNumber);
 								programStatus.HandleProgramStatusChange(40);
 								std::cout << "Filter finished!\n";
@@ -213,15 +220,15 @@ private:
 		sf::Text text("Loading file...", font, 20);
 		srcImg = new ImageEntry(sf::Vector2f(50, 350), text, targetWidth, targetHeight);
 		srcImg->LoadImageFromFile(bmpFileName);
-		srcImg->AfterLoading("Source image: ");
+		srcImg->AfterLoading("Source image: ", std::chrono::milliseconds());
 	}
 
-	void PrepareImages(const std::string& resBmpName)
+	void PrepareImages(const std::string& resBmpName, const std::chrono::milliseconds& timeResult)
 	{
 		sf::Text text("Loading file...", font, 20);
 		fImg = new ImageEntry(sf::Vector2f(800, 350), text, targetWidth, targetHeight);
 		fImg->LoadImageFromFile(resBmpName);
-		fImg->AfterLoading("Filtered image: ");
+		fImg->AfterLoading("Filtered image: ", timeResult);
 
 	}
 
@@ -247,7 +254,7 @@ public:
 	void InitWindow()
 	{
 		window = new sf::RenderWindow(sf::VideoMode(1600, 900), "Minimal filter");
-		window->setFramerateLimit(60);
+		window->setFramerateLimit(30);
 	}
 
 	void InitVariables()
@@ -315,13 +322,13 @@ public:
 		int width{}, height{};
 		unsigned char* bmp = bmpfun::LoadBMPFromFile(filename, width, height);
 		std::string output;
+		std::chrono::milliseconds timeResult;
 		switch (option)
 		{
 		case 50:
 		{
 			try
 			{
-				std::chrono::milliseconds timeResult;
 				if (threadsNr == 1)
 				{
 					filter::OneThreadC(height, width, bmp, timeResult, output);
@@ -342,7 +349,6 @@ public:
 		{
 			try
 			{
-				std::chrono::milliseconds timeResult;
 				if (threadsNr == 1)
 				{
 					filter::OneThreadAssembly(height, width, bmp, timeResult, output);
@@ -363,21 +369,14 @@ public:
 			break;
 		}
 
-		PrepareImages(output);
+		PrepareImages(output, timeResult);
 
 		delete[] bmp;
 	}
 
-	bool WindowOpen() const noexcept
+	bool IsOpen() const noexcept
 	{
-		if (window->isOpen())
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		return window->isOpen();
 	}
 
 	~Engine()

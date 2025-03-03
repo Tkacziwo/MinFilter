@@ -112,6 +112,7 @@ public:
 		sf::Text pageText(pageString, font, characterSize);
 		fileEntries.push_back(FileEntry(entriesOffset, pageText, font));
 		entriesOffset.y += 30;
+		playerEntry.SetOffset(entriesOffset);
 	}
 
 	void Draw()

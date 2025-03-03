@@ -2,6 +2,8 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
 #include <iostream>
+#include <chrono>
+#include <sstream>
 
 class ImageEntry
 {
@@ -53,9 +55,19 @@ public:
 		}
 	}
 
-	void AfterLoading(const std::string& message)
+	void AfterLoading(const std::string& message, const std::chrono::milliseconds& timeResult)
 	{
-		text.setString(message);
+		std::string str = message;
+		std::stringstream ss;
+		if (timeResult.count() != 0)
+		{
+			std::string handler;
+			str.append(" Execution time");
+			ss << timeResult.count();
+			ss >> handler;
+			str.append(" "+handler+" ms");
+		}
+		text.setString(str);
 	}
 
 	void Draw(sf::RenderTarget& target)
