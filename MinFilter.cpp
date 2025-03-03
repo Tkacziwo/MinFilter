@@ -4,7 +4,7 @@ int main()
 {
     Engine engine;
 
-    while (engine.WindowOpen())
+    while (engine.IsOpen())
     {
         engine.Update();
 

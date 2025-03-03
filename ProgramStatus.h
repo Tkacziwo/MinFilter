@@ -36,7 +36,6 @@ public:
 	}
 	void HandleProgramStatusChange(int statusCode)
 	{
-		//docelowo wczytywane z pliku
 		RestoreOriginalText();
 		switch (statusCode)
 		{
